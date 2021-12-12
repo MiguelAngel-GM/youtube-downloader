@@ -8,7 +8,7 @@ def downloadAudio(url, path='', list_mode=False):
         try:
             yt=YouTube(url)
         except:
-            print("El enlace introducido es erroneo\n\n")
+            print("El enlace introducido es erroneo")
             repeat()
             return
     else: yt=url
@@ -38,7 +38,6 @@ def downloadAudio(url, path='', list_mode=False):
         return
 
     if not list_mode:
-        print("\n\n")
         repeat()
 
 
@@ -74,7 +73,6 @@ def downloadVideo(url, path='', res='',list_mode=False):
         print("Hecho!")
 
     if not list_mode:
-        print("\n\n")
         repeat()
 
 
@@ -82,7 +80,7 @@ def handleList(url, mode):
     try:    
         pl=Playlist(url)
     except:
-        print("El enlace introducido es erroneo\n\n")
+        print("El enlace introducido es erroneo")
         repeat()
         return
 
@@ -98,12 +96,12 @@ def handleList(url, mode):
         for video in pl.videos:
             downloadVideo(video, list_path, list_res, list_mode=True)
 
-    print("\n\n")
     repeat()
 
     
 def repeat():
     global again
+    print("\n\n")
     while True:
         op=input("Quieres hacer algo mas? (Si/No) --> ")
         if op.lower()=='si':
