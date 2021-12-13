@@ -79,12 +79,12 @@ def downloadVideo(url, path='', res='',list_mode=False):
 def handleList(url, mode):
     try:    
         pl=Playlist(url)
+        print(f"Va a descargarse la lista {pl.title}")
     except:
         print("El enlace introducido es erroneo")
         repeat()
         return
 
-    print(f"Va a descargarse la lista {pl.title}")
     list_path=input("En que ruta quieres guardar tu descarga? (Si se deja en blanco, la descarga se guardara en el directorio donde se encuente ubicado el programa) --> ")
     if (list_path!='' and list_path[-1]!='/'): list_path+='/'
 
@@ -117,7 +117,6 @@ def repeat():
 
 def main():
     print("Hola :)")
-    option, mode ='', ''
     global again
     while again==True:
         option=input("Quieres descargar un video o una lista? --> ")
