@@ -8,7 +8,7 @@ def downloadAudio(url, path='', list_mode=False):
         try:
             yt=YouTube(url)
         except:
-            print("El enlace introducido es erroneo")
+            print("El enlace introducido es erroneo\n\n")
             repeat()
             return
     else: yt=url
@@ -21,7 +21,7 @@ def downloadAudio(url, path='', list_mode=False):
     if not list_mode:
         path=input("En que ruta quieres guardar tu descarga? (Si se deja en blanco, la descarga se guardara en el directorio donde se encuente ubicado el programa) --> ")
         if (path!='' and path[-1]!='/'): path+='/'
-    for char in ["'", "á", "é", "í", "ó", "ú", 'ñ', 'º', 'ª']:  #si uno de estos caracteres esta en el titulo del video, hay que modificarlo para que no produzca errores
+    for char in ["'", "á", "é", "í", "ó", "ú", 'ñ', 'º', 'ª']:
         if char in yt.title:
             title=''    # xdd
         else: title=yt.title
@@ -31,6 +31,10 @@ def downloadAudio(url, path='', list_mode=False):
         file=path+title
         file_mp3=path+title+'.mp3'
         os.rename(file, file_mp3)   #el archivo descargado se convierte a mp3 (pytube descarga en mp4)
+        # HAY UN ERROR CUANDO EL TITULO DEL VIDEO TIENE CARACTERES RAROS
+        # puede solucionarse comprobando si el titulo del video tiene caracteres especiales y 
+        # si es asi pides al usuario que establezca un titulo para el archivo que va a descargar 
+        # el cual se corresponde al parametro filename del metodo download
         print("Hecho!")
     except:
         print("Error en la descarga, revisa que los parametros sean correctos y que tienes conexion a internet.\n\n")
@@ -38,6 +42,7 @@ def downloadAudio(url, path='', list_mode=False):
         return
 
     if not list_mode:
+        print("\n\n")
         repeat()
 
 
@@ -73,18 +78,19 @@ def downloadVideo(url, path='', res='',list_mode=False):
         print("Hecho!")
 
     if not list_mode:
+        print("\n\n")
         repeat()
 
 
 def handleList(url, mode):
     try:    
         pl=Playlist(url)
-        print(f"Va a descargarse la lista {pl.title}")
     except:
-        print("El enlace introducido es erroneo")
+        print("El enlace introducido es erroneo\n\n")
         repeat()
         return
 
+    print(f"Va a descargarse la lista {pl.title}")
     list_path=input("En que ruta quieres guardar tu descarga? (Si se deja en blanco, la descarga se guardara en el directorio donde se encuente ubicado el programa) --> ")
     if (list_path!='' and list_path[-1]!='/'): list_path+='/'
 
@@ -96,12 +102,12 @@ def handleList(url, mode):
         for video in pl.videos:
             downloadVideo(video, list_path, list_res, list_mode=True)
 
+    print("\n\n")
     repeat()
 
     
 def repeat():
     global again
-    print("\n\n")
     while True:
         op=input("Quieres hacer algo mas? (Si/No) --> ")
         if op.lower()=='si':
@@ -117,6 +123,7 @@ def repeat():
 
 def main():
     print("Hola :)")
+    option, mode ='', ''
     global again
     while again==True:
         option=input("Quieres descargar un video o una lista? --> ")
