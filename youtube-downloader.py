@@ -23,7 +23,7 @@ def downloadAudio(url, path, is_playlist=False):
             exit(1)
     else: yt = url
 
-    print("Getting audio streams...")
+    print(f"Getting audio streams for {yt.title}...")
     audio_stream = yt.streams.get_audio_only()
     size = "{:.2f}".format(float(audio_stream.filesize)/2**20)
     print(f"Downloading {yt.title}.mp3 ({size} mb)...")
@@ -55,7 +55,7 @@ def downloadVideo(url, path, res, is_playlist=False):
             exit(1)
     else: yt = url
 
-    print("Getting video streams...")
+    print(f"Getting video streams for {yt.title}...")
     video_streams = yt.streams.filter(progressive=True)   # video and audio stream list (restricted to 720p)
     
     if not is_playlist:
@@ -86,6 +86,8 @@ def handleList(url, path, res, mode):
     except exceptions.PytubeError as e:
         print(f"[ERROR] Pytube raised an exception with the following error message: {e.args}")
         exit(1)
+
+    if (path != '' and path[-1] != '/'): path += '/'
 
     if mode == 0:
         for video in pl.videos:
