@@ -1,156 +1,121 @@
-from pytube import YouTube, Playlist
+from pytube import YouTube, Playlist, exceptions
 import os
 import subprocess
+import argparse
 
+def createParser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(epilog="Unless specified via the -v flag, the videos will be downloaded as an audio only stream and converted to mp3")
+    parser.add_argument("url", help="URL for the video/playlist")
+    parser.add_argument("path", help="Output file path. If left empty the output will be saved in the current directory", default="", nargs="?")
+    parser.add_argument("-p", "--playlist", help="indicates that the URL corresponds to a YouTube playlist", action="store_true")
+    parser.add_argument("-v", "--video", help="download video in a specified resolution and save it as an mp4 file", action="store_true")
+    parser.add_argument("-r", "--res", help="resolution for the video in case -v is active", 
+                        choices=["144p", "360p", "720p"], default="360p", const="360p", nargs="?")
+    return parser
+    
 
-again = True
-
-
-def downloadAudio(url, path='', list_mode=False):
-    if not list_mode:
+def downloadAudio(url, path, is_playlist=False):
+    if not is_playlist:
         try:
             yt = YouTube(url)
-        except:
-            print("El enlace introducido es erroneo")
-            repeat()
-            return
+        except exceptions.PytubeError as e:
+            print(f"[ERROR] Pytube raised an exception with the following error message: {e.args}")
+            exit(1)
     else: yt = url
 
-    print("Un momento...")
+    print("Getting audio streams...")
     audio_stream = yt.streams.get_audio_only()
-    size = "{:.2f}".format(float(audio_stream.filesize)/1048576)
-    print(f"Va a descargarse el archivo {yt.title}.mp3 ({size} mb)")
+    size = "{:.2f}".format(float(audio_stream.filesize)/2**20)
+    print(f"Downloading {yt.title}.mp3 ({size} mb)...")
     
-    if not list_mode:
-        path = input("En que ruta quieres guardar tu descarga? (Si se deja en blanco, la descarga se guardara en el directorio donde se encuente ubicado el programa)\n> ")
+    if not is_playlist:
         if (path != '' and path[-1] != '/'): path += '/'
 
     try:
-        print("Descargando el archivo...")
         file = path + yt.title + '.mp4'
         audio_stream.download(output_path=path, filename=file)
-        file_mp3 = path + yt.title +'.mp3'
-        print("Realizando conversion a mp3...")
-        subprocess.run(["ffmpeg", "-i", file, "-vn", file_mp3])    #el archivo descargado se convierte a mp3 (pytube descarga en mp4)
+        file_mp3 = path + yt.title + '.mp3'
+        print("Converting to mp3...")
+        subprocess.run(["ffmpeg", "-i", file, "-vn", file_mp3, "-loglevel", "quiet"])    # ffmpeg command to convert to mp3
         os.remove(file)
-    except:
-        print("Error en la descarga, revisa que los parametros sean correctos y que tienes conexion a internet.\n\n")
-        repeat()
-        return
+    except exceptions.PytubeError as e:
+        print(f"[ERROR] Pytube raised an exception with the following error message: {e.args}")
+        exit(1)
 
-    if not list_mode:
-        repeat()
+    print("Done!")
 
 
 
-def downloadVideo(url, path='', res='', list_mode=False):
-    if not list_mode:
+def downloadVideo(url, path, res, is_playlist=False):
+    if not is_playlist:
         try:
             yt = YouTube(url)
-        except:
-            print("El enlace introducido es erroneo")
-            repeat()
-            return
+        except exceptions.PytubeError as e:
+            print(f"[ERROR] Pytube raised an exception with the following error message: {e.args}")
+            exit(1)
     else: yt = url
 
-    print("Un momento...")
-    video_streams = yt.streams.filter(progressive=True)   #lista de streams de video y audio (restringido a 720p)
+    print("Getting video streams...")
+    video_streams = yt.streams.filter(progressive=True)   # video and audio stream list (restricted to 720p)
     
-    if not list_mode:
-        res = [stream.resolution for stream in video_streams]
-        print(f"Las resoluciones disponibles son {res}")
-        res = input("Elige resolucion entre las disponibles\n> ")
-        path = input("En que ruta quieres guardar tu descarga? (Si se deja en blanco, la descarga se guardara en el directorio donde se encuente ubicado el programa)\n> ")
+    if not is_playlist:
         if (path != '' and path[-1] != '/'): path += '/'
 
     try:
-        size = "{:.2f}".format(float(video_streams.get_by_resolution(str(res)).filesize)/1048576)
-        print(f"Va a descargarse el archivo {yt.title}.mp4 ({size} mb)")
+        size = "{:.2f}".format(float(video_streams.get_by_resolution(str(res)).filesize)/2**20)
+        print(f"Downloading {yt.title}.mp4 ({size} mb)...")
         video_streams.get_by_resolution(str(res)).download(output_path=path)
-    except:
-        print("No puede descargarse el video a la resolucion introducida, se va a descargar a la resolucion mas alta disponible")
-        size = "{:.2f}".format(float(video_streams.get_highest_resolution().filesize)/1048576)
-        print(f"Va a descargarse el archivo {yt.title}.mp4 ({size} mb)")
+    except AttributeError:
+        print("[WARNING] Couldn't download video with the requested resolution, the video will be downloaded at the highest resolution available.")
+        size = "{:.2f}".format(float(video_streams.get_highest_resolution().filesize)/2**20)
+        print(f"Downloading {yt.title}.mp4 ({size} mb)...")
         video_streams.get_highest_resolution().download(output_path=path)
+    except exceptions.PytubeError as e: 
+        print(f"[ERROR] Pytube raised an exception with the following error message: {e.args}")
+        exit(1)
+    
+    print("Done!")
 
-    if not list_mode:
-        repeat()
 
+        
 
-
-def handleList(url, mode):
+def handleList(url, path, res, mode):
     try:    
         pl = Playlist(url)
-        print(f"Va a descargarse la lista {pl.title}")
-    except:
-        print("El enlace introducido es erroneo")
-        repeat()
-        return
+        print(f"Downloading playlist: {pl.title}")
+    except exceptions.PytubeError as e:
+        print(f"[ERROR] Pytube raised an exception with the following error message: {e.args}")
+        exit(1)
 
-    list_path = input("En que ruta quieres guardar tu descarga? (Si se deja en blanco, la descarga se guardara en el directorio donde se encuente ubicado el programa)\n> ")
-    if (list_path != '' and list_path[-1] != '/'): list_path += '/'
-
-    if mode.lower() == 'audio':
+    if mode == 0:
         for video in pl.videos:
-            downloadAudio(video, list_path, list_mode=True)
-    elif mode.lower() == 'video':
-        list_res = input("A que resolucion quieres descargar los videos de la lista? (720p max)\n> ")
+            downloadAudio(video, path, is_playlist=True)
+    else:
         for video in pl.videos:
-            downloadVideo(video, list_path, list_res, list_mode=True)
-
-    repeat()
+            downloadVideo(video, path, res, is_playlist=True)
 
 
 
-def repeat():
-    global again
-    os.system("clear")
-    print("Hecho!")
-
-    while True:
-        op = input("Quieres hacer algo mas? (S/N) --> ")
-        
-        if op.lower() == 's':
-            again = True
-            break
-        elif op.lower() == 'n':
-            again = False
-            print("Adios :)")
-            break
+def processArguments(args):
+    if args.video:
+        if args.playlist:
+            handleList(args.url, args.path, args.res, 1)
         else:
-            print("Opcion invalida, solo son validas las opciones si y no, prueba otra vez")
+            downloadVideo(args.url, args.path, args.res)
+    else:
+        if args.playlist:
+            handleList(args.url, args.path, args.res, 0)
+        else:
+            downloadAudio(args.url, args.path)
 
 
 
 def main():
-    print("Hola :)")
-    global again
+    parser = createParser()
+    args = parser.parse_args()
 
-    while again == True:
-        option = input("Quieres descargar un video o una lista?\n> ")
-        
-        if option.lower() == 'video':
-            url = input("Introduce el enlace al video que quieres descargar\n> ")
-            mode = input("Quieres descargar el video completo o solo audio? (Escribe audio o video)\n> ")
+    processArguments(args)
 
-            if mode.lower() == 'audio': downloadAudio(url)
-            elif mode.lower() == 'video': downloadVideo(url)
-            else: print("Opcion invalida, solo son validas las opciones video y audio, prueba otra vez")
-
-        
-        elif option.lower() == 'lista':
-            url = input("Introduce el enlace a la lista que quieres descargar\n> ")
-            mode = input("Quieres descargar los videos completos o solo su audio? (Escribe audio o video)\n> ")
-
-            if mode.lower() not in ['audio', 'video']: print("Opcion invalida, solo son validas las opciones video y audio, prueba otra vez")        
-            else: handleList(url, mode)
-
-        else:
-            print("Opcion invalida, solo son validas las opciones video o lista. Intentalo de nuevo")
-
-
-
-
-
+    
 if __name__ == "__main__":
     main()

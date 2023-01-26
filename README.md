@@ -1,4 +1,4 @@
 # youtube-downloader
-Script para descargar videos de YouTube en formato mp3 y mp4.
+Script for downloading YouTube videos in mp3 and mp4 format.
 
-Este script utiliza la librería PyTube (https://github.com/pytube/pytube) y requiere tener instalada la utilidad FFmpeg (https://ffmpeg.org/) además del intérprete de Python y dicha librería en su última versión.
+This script requires the latest version of the PyTube python module (https://github.com/pytube/pytube) and FFmpeg (https://ffmpeg.org/) as well as a python3 interpreter.
