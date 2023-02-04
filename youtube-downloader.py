@@ -2,6 +2,7 @@ from pytube import YouTube, Playlist, exceptions
 import os
 import subprocess
 import argparse
+import concurrent.futures
 
 def createParser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(epilog="Unless specified via the -v flag, the videos will be downloaded as an audio only stream and converted to mp3")
@@ -26,7 +27,7 @@ def downloadAudio(url, path, is_playlist=False):
     print(f"Getting audio streams for {yt.title}...")
     audio_stream = yt.streams.get_audio_only()
     size = "{:.2f}".format(float(audio_stream.filesize)/2**20)
-    print(f"Downloading {yt.title}.mp3 ({size} mb)...")
+    print(f"Downloading {yt.title}.mp4 ({size} mb)...")
     
     if not is_playlist:
         if (path != '' and path[-1] != '/'): path += '/'
@@ -37,7 +38,7 @@ def downloadAudio(url, path, is_playlist=False):
         file_mp3 = path + yt.title + '.mp3'
         print("Converting to mp3...")
         subprocess.run(["ffmpeg", "-i", file, "-vn", file_mp3, "-loglevel", "quiet"])    # ffmpeg command to convert to mp3
-        os.remove(file)
+        subprocess.run(["rm", file])
     except exceptions.PytubeError as e:
         print(f"[ERROR] Pytube raised an exception with the following error message: {e.args}")
         exit(1)
@@ -89,13 +90,13 @@ def handleList(url, path, res, mode):
 
     if (path != '' and path[-1] != '/'): path += '/'
 
-    if mode == 0:
-        for video in pl.videos:
-            downloadAudio(video, path, is_playlist=True)
-    else:
-        for video in pl.videos:
-            downloadVideo(video, path, res, is_playlist=True)
-
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        if mode == 0:
+            for video in pl.videos:
+                executor.submit(downloadAudio, video, path, True)
+        else:
+            for video in pl.videos:
+                executor.submit(downloadVideo, video, path, res, True)
 
 
 def processArguments(args):
